@@ -2,37 +2,53 @@
 #include <vector>
 #include <sstream>
 #include <string>
+#include <list>
+#include <iterator>
 using namespace std;
 string Rcode = "1111";
 int licznik = 0;
 
+list<int> possibilities[8][4];
+
+int resultHistory[14][8];
+
+
 struct Point {
 	int appeared = 0;
-	int correct = 0;
+	int correctCol = 0;
+	int correctPos = 0;
 };
+
+void masterLogic(string Code, int corPos, int round);
 
 Point numOfAppear(string code) {
 	int appearedNum = 0;
-	int correctdNum = 0;
+	int correctPosdNum = 0;
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (code[j] == Rcode[i])
 				appearedNum++;
 		}
 		if (code[i] == Rcode[i])
-			correctdNum++;
+			correctPosdNum++;
 	}
-	licznik++;
-	if (licznik > 13)
-		cout << "siema";
+
 	Point result;
 	result.appeared = appearedNum;
-	result.correct = correctdNum;
-	cout << code << " A" << appearedNum << " C" << correctdNum << endl;
-	if (correctdNum == 4)
+	result.correctCol = appearedNum - correctPosdNum;
+	result.correctPos = correctPosdNum;
+	for (int i = 0; i < 4; i++) {
+		resultHistory[licznik][i] = code[i] - 49;
+	}
+	resultHistory[licznik][4] = result.correctCol;
+	resultHistory[licznik][5] = result.correctPos;
+	cout << code << " A" << result.correctCol << " C" << correctPosdNum << endl;
+	masterLogic(code, result.correctPos, licznik);
+	licznik++;
+	if (correctPosdNum == 4)
 		cout << code << " kroki: " << licznik << endl << endl;
-	if (licznik > 12)
-		cout << "o cie chhuj";
+	//if (licznik > 12)
+	//	cout << "o cie chhuj";
 	return result;
 }
 
@@ -53,26 +69,24 @@ string rotateString(string code) {
 	return code;
 }
 
-void correctPlacement(string code0, Point result) {
+void correctPosPlacement(string code0, Point result) {
 	string code1;
 	string code2;
 	string code3;
-	string code4;
-	string code5;
-	int app = result.correct;
+	int app = result.correctPos;
 	switch (app) {
 	case 2:
-		switch (numOfAppear(reversePair(code0, 0, 1)).correct) {
+		switch (numOfAppear(reversePair(code0, 0, 1)).correctPos) {
 		case 0:
 			numOfAppear(reversePair(code0, 2, 3));
 			break;
 		case 1:
-			switch (numOfAppear(reversePair(code0, 1, 2)).correct) {
+			switch (numOfAppear(reversePair(code0, 1, 2)).correctPos) {
 			case 0:
 				numOfAppear(reversePair(code0, 0, 3));
 				break;
 			case 1:
-				switch (numOfAppear(reversePair(code0, 0, 2)).correct) {
+				switch (numOfAppear(reversePair(code0, 0, 2)).correctPos) {
 				case 0:
 					numOfAppear(reversePair(code0, 1, 3));
 					break;
@@ -91,17 +105,17 @@ void correctPlacement(string code0, Point result) {
 
 	case 1:
 		code1 = reversePair(code0, 0, 1);
-		switch (numOfAppear(code1).correct) {
+		switch (numOfAppear(code1).correctPos) {
 		case 0:
 			code1 = reversePair(code0, 2, 3);
 			break;
 		}
-		switch (numOfAppear(reversePair(code1, 1, 2)).correct) {
+		switch (numOfAppear(reversePair(code1, 1, 2)).correctPos) {
 		case 0:
 			numOfAppear(reversePair(code1, 0, 3));
 			break;
 		case 1:
-			switch (numOfAppear(reversePair(code1, 0, 2)).correct) {
+			switch (numOfAppear(reversePair(code1, 0, 2)).correctPos) {
 			case 0:
 				numOfAppear(reversePair(code1, 1, 3));
 				break;
@@ -116,10 +130,10 @@ void correctPlacement(string code0, Point result) {
 
 	case 0:
 		code1 = rotateString(code0);
-		switch (numOfAppear(code1).correct) {
+		switch (numOfAppear(code1).correctPos) {
 		case 0:
 			code2 = rotateString(code1);
-			switch (numOfAppear(rotateString(code2)).correct) {
+			switch (numOfAppear(rotateString(code2)).correctPos) {
 			case 0:
 				code3 = rotateString(code2);
 				numOfAppear(code3);
@@ -130,12 +144,12 @@ void correctPlacement(string code0, Point result) {
 			break;
 		case 1:
 			code2 = rotateString(code1); // code2 has 2 right
-			switch (numOfAppear(reversePair(code2, 0, 1)).correct) {
+			switch (numOfAppear(reversePair(code2, 0, 1)).correctPos) {
 			case 0:
 				numOfAppear(reversePair(code2, 2, 3));
 				break;
 			case 1:
-				switch (numOfAppear(reversePair(code2, 1, 2)).correct) {
+				switch (numOfAppear(reversePair(code2, 1, 2)).correctPos) {
 				case 0:
 					numOfAppear(reversePair(code2, 0, 3));
 					break;
@@ -148,7 +162,7 @@ void correctPlacement(string code0, Point result) {
 			}
 			break;
 		case 2:
-			switch (numOfAppear(reversePair(code1, 0, 2)).correct) {
+			switch (numOfAppear(reversePair(code1, 0, 2)).correctPos) {
 			case 0:
 				numOfAppear(reversePair(code1, 1, 3));
 				break;
@@ -169,9 +183,9 @@ void correctPlacement(string code0, Point result) {
 }
 
 int findResult(string code, Point res) {
-	//cout << "zaczynam sprawdzenie z kode" << code << " A" << res.appeared << " C" << res.correct << endl;
+	//cout << "zaczynam sprawdzenie z kode" << code << " A" << res.appeared << " C" << res.correctPos << endl;
 	//Point res = numOfAppear(code);
-	correctPlacement(code, res);
+	correctPosPlacement(code, res);
 	return 0;
 }
 
@@ -180,14 +194,14 @@ string findCompletion(string origin) {
 	string completion = "1111";
 	bool table[8]{ 1,1,1,1,1,1,1,1 };
 	for (int i = 0; i < 4; i++) {
-		int j = origin[i] - 48;
-		table[j - 1] = 0;
+		int j = origin[i] - 49;
+		table[j] = 0;
 	}
 
 	int pos = 0;
 	for (int i = 0; i < 9; i++) {
 		if (table[i] == 1) {
-			completion[pos] = i + 1 + 48;
+			completion[pos] = i + 49;
 			pos++;
 		}
 	}
@@ -303,6 +317,164 @@ void findTripple() {
 	cout << "halo" << endl;
 }
 
+void showlist(list<int> g)
+{
+	list<int>::iterator it;
+	for (it = g.begin(); it != g.end(); ++it)
+		cout << *it << ' ';
+	cout << '\n';
+}
+
+
+void updateList(int color, int row, int value) {
+	if (possibilities[color][row].empty()) {
+		possibilities[color][row].push_back(value);
+	}
+	else {
+		if (possibilities[color][row].back() != -1 && possibilities[color][row].back() != 100) { // if was some maybies
+
+			if (value == -1) {
+
+				list<int>::iterator it;
+				for (it = possibilities[color][row].begin(); it != possibilities[color][row].end(); ++it) {
+					int round = *it;
+					int quantity = resultHistory[round][4];
+					int counter = 0;
+					int tab[4][2];
+					for (int i = 0; i < 4; i++) {
+
+						int colorHistory = resultHistory[round][i];
+
+						if (colorHistory != color) {
+
+							if (possibilities[colorHistory][i].back() != -1 && possibilities[colorHistory][i].back() != 100) {
+								tab[counter][0] = colorHistory;
+								tab[counter][1] = i;
+								counter++;
+							}
+						}
+					}
+
+					if (counter == quantity) {
+						for (int j = 0; j < quantity; j++) {
+							updateList(tab[j][0], tab[j][1], 100);
+						}
+					}
+
+				}
+
+				possibilities[color][row].clear();
+				possibilities[color][row].push_back(value);
+
+
+			}
+			else if (value == 100) {
+
+
+				for (int a = 0; a < 8; a++) {
+
+					if (color != a) {
+
+						list<int>::iterator it;
+						for (it = possibilities[a][row].begin(); it != possibilities[a][row].end(); ++it) {
+							int round = *it;
+							int quantity = resultHistory[round][4];
+							int counter = 0;
+							int tab[4][2];
+							for (int i = 0; i < 4; i++) {
+
+								int colorHistory = resultHistory[round][i];
+
+								if (colorHistory != color) {
+
+									if (possibilities[colorHistory][i].back() != -1 && possibilities[colorHistory][i].back() != 100) {
+										tab[counter][0] = colorHistory;
+										tab[counter][1] = i;
+										counter++;
+									}
+								}
+							}
+
+							if (counter == quantity) {
+								for (int j = 0; j < quantity; j++) {
+									updateList(tab[j][0], tab[j][1], 100);
+								}
+							}
+
+						}
+
+						possibilities[a][row].clear();
+						possibilities[a][row].push_back(-1);
+					}
+				}
+				for (int a = 0; a < 4; a++) {
+
+					if (row != a) {
+
+						list<int>::iterator it;
+						for (it = possibilities[a][row].begin(); it != possibilities[a][row].end(); ++it) {
+							int round = *it;
+							int quantity = resultHistory[round][4];
+							int counter = 0;
+							int tab[4][2];
+							for (int i = 0; i < 4; i++) {
+
+								int colorHistory = resultHistory[round][i];
+
+								if (colorHistory != color) {
+
+									if (possibilities[colorHistory][i].back() != -1 && possibilities[colorHistory][i].back() != 100) {
+										tab[counter][0] = colorHistory;
+										tab[counter][1] = i;
+										counter++;
+									}
+								}
+							}
+
+							if (counter == quantity) {
+								for (int j = 0; j < quantity; j++) {
+									updateList(tab[j][0], tab[j][1], 100);
+								}
+							}
+
+						}
+
+						possibilities[color][a].clear();
+						possibilities[color][a].push_back(-1);
+					}
+				}
+
+
+				possibilities[color][row].clear();
+				possibilities[color][row].push_back(value);
+			}
+			else {
+				possibilities[color][row].push_back(value);
+			}
+		}
+	}
+
+
+}
+
+
+void masterLogic(string code, int corPos, int round) {
+
+	int value = 0;
+	if (corPos == 0) {
+		value = -1;
+	}
+	else if(corPos == 4) {
+		value = 100;
+	}
+	else {
+		value = round;
+	}
+	for (int i = 0; i < 4; i++) {
+		int color = code[i] - 49;
+		updateList(color, i, value);
+	}
+}
 
 
 void generateNumbers(int n, int len, vector<int>& curr, vector<vector<int>>& result) {
@@ -337,36 +509,38 @@ int main()
 
 
 
-
-
-	for (int i = 1; i < 800; i++) {
+	for (int i = 0; i < 800; i++) {
 		for (int j = 0; j < 4; j++) {
 			cout << result[i][j];
 			Rcode[j] = result[i][j] + 48;
 		}
-		//Rcode = "4628";
 		cout << endl;
 		licznik = 0;
+
+		for (int l = 0; l < 14; l++) {
+			for (int j = 0; j < 6; j++) {
+				resultHistory[l][j] = 0;
+			}
+		}
+
+		for (int l = 0; l < 8; l++) {
+			for (int j = 0; j < 4; j++) {
+				possibilities[l][j].clear();
+			}
+		}
+
 		findTripple();
+
+		for (int l = 0; l < 14; l++) {
+			if (l < 10)
+				cout << "0";
+			cout << l << " ";
+			for (int j = 0; j < 6; j++) {
+				cout << resultHistory[l][j] << ' ';
+			}
+			cout << endl;
+		}
 	}
-
-
-	//for (int i = 0; i < index; i++) {
-	//	cout << numbers[i] << " ";
-	//	Rcode = numbers[i];
-	//	licznik = 0;
-	//	findTripple();
-	//}
-
-	//Rcode = "2361";
-	//licznik = 0;
-	//findResult("1623");
-
-	//for (int i = 0; i < 70; i++) {
-	//	Rcode = Tab[i];
-	//	licznik = 0;
-	//	findTripple();
-	//}
 
 	return 0;
 }
