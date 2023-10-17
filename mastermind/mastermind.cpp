@@ -10,7 +10,7 @@ int licznik = 0;
 
 list<int> possibilities[8][4];
 
-int resultHistory[14][8];
+int resultHistory[14][6];
 
 
 struct Point {
@@ -20,7 +20,7 @@ struct Point {
 };
 
 void masterLogic(string Code, int corPos, int round);
-
+void justCallMe(int a, int row, int color);
 Point numOfAppear(string code) {
 	int appearedNum = 0;
 	int correctPosdNum = 0;
@@ -43,8 +43,11 @@ Point numOfAppear(string code) {
 	resultHistory[licznik][4] = result.correctCol;
 	resultHistory[licznik][5] = result.correctPos;
 	cout << code << " A" << result.correctCol << " C" << correctPosdNum << endl;
+	if (code == "1235" && result.correctPos == 4)
+		cout << "halo";
 	masterLogic(code, result.correctPos, licznik);
 	licznik++;
+
 	if (correctPosdNum == 4)
 		cout << code << " kroki: " << licznik << endl << endl;
 	//if (licznik > 12)
@@ -326,134 +329,49 @@ void showlist(list<int> g)
 }
 
 
+
+
 void updateList(int color, int row, int value) {
-	if (possibilities[color][row].empty()) {
-		possibilities[color][row].push_back(value);
-	}
-	else {
-		if (possibilities[color][row].back() != -1 && possibilities[color][row].back() != 100) { // if was some maybies
+		if (value == -1) {
 
-			if (value == -1) {
+			justCallMe(color, row, color);
 
-				list<int>::iterator it;
-				for (it = possibilities[color][row].begin(); it != possibilities[color][row].end(); ++it) {
-					int round = *it;
-					int quantity = resultHistory[round][4];
-					int counter = 0;
-					int tab[4][2];
-					for (int i = 0; i < 4; i++) {
-
-						int colorHistory = resultHistory[round][i];
-
-						if (colorHistory != color) {
-
-							if (possibilities[colorHistory][i].back() != -1 && possibilities[colorHistory][i].back() != 100) {
-								tab[counter][0] = colorHistory;
-								tab[counter][1] = i;
-								counter++;
-							}
-						}
-					}
-
-					if (counter == quantity) {
-						for (int j = 0; j < quantity; j++) {
-							updateList(tab[j][0], tab[j][1], 100);
-						}
-					}
-
-				}
-
-				possibilities[color][row].clear();
-				possibilities[color][row].push_back(value);
+			possibilities[color][row].clear();
+			possibilities[color][row].push_back(value);
 
 
-			}
-			else if (value == 100) {
-
-
-				for (int a = 0; a < 8; a++) {
-
-					if (color != a) {
-
-						list<int>::iterator it;
-						for (it = possibilities[a][row].begin(); it != possibilities[a][row].end(); ++it) {
-							int round = *it;
-							int quantity = resultHistory[round][4];
-							int counter = 0;
-							int tab[4][2];
-							for (int i = 0; i < 4; i++) {
-
-								int colorHistory = resultHistory[round][i];
-
-								if (colorHistory != color) {
-
-									if (possibilities[colorHistory][i].back() != -1 && possibilities[colorHistory][i].back() != 100) {
-										tab[counter][0] = colorHistory;
-										tab[counter][1] = i;
-										counter++;
-									}
-								}
-							}
-
-							if (counter == quantity) {
-								for (int j = 0; j < quantity; j++) {
-									updateList(tab[j][0], tab[j][1], 100);
-								}
-							}
-
-						}
-
-						possibilities[a][row].clear();
-						possibilities[a][row].push_back(-1);
-					}
-				}
-				for (int a = 0; a < 4; a++) {
-
-					if (row != a) {
-
-						list<int>::iterator it;
-						for (it = possibilities[a][row].begin(); it != possibilities[a][row].end(); ++it) {
-							int round = *it;
-							int quantity = resultHistory[round][4];
-							int counter = 0;
-							int tab[4][2];
-							for (int i = 0; i < 4; i++) {
-
-								int colorHistory = resultHistory[round][i];
-
-								if (colorHistory != color) {
-
-									if (possibilities[colorHistory][i].back() != -1 && possibilities[colorHistory][i].back() != 100) {
-										tab[counter][0] = colorHistory;
-										tab[counter][1] = i;
-										counter++;
-									}
-								}
-							}
-
-							if (counter == quantity) {
-								for (int j = 0; j < quantity; j++) {
-									updateList(tab[j][0], tab[j][1], 100);
-								}
-							}
-
-						}
-
-						possibilities[color][a].clear();
-						possibilities[color][a].push_back(-1);
-					}
-				}
-
-
-				possibilities[color][row].clear();
-				possibilities[color][row].push_back(value);
-			}
-			else {
-				possibilities[color][row].push_back(value);
-			}
 		}
-	}
+		else if (value == 100) {
 
+
+			for (int a = 0; a < 8; a++) {
+
+				if (color != a) {
+
+					justCallMe(a, row, color);
+
+					possibilities[a][row].clear();
+					possibilities[a][row].push_back(-1);
+				}
+			}
+			for (int a = 0; a < 4; a++) {
+
+				if (row != a) {
+
+					justCallMe(a, row, color);
+
+					possibilities[color][a].clear();
+					possibilities[color][a].push_back(-1);
+				}
+			}
+
+
+			possibilities[color][row].clear();
+			possibilities[color][row].push_back(value);
+		}
+		else {
+			possibilities[color][row].push_back(value);
+		}
 
 }
 
@@ -476,6 +394,36 @@ void masterLogic(string code, int corPos, int round) {
 	}
 }
 
+void justCallMe(int a, int row, int color) {
+	list<int>::iterator it;
+	for (it = possibilities[a][row].begin(); it != possibilities[a][row].end(); ++it) {
+		int round = *it;
+		int quantity = resultHistory[round][5];
+		int counter = 0;
+		int tab[4][2];
+		for (int i = 0; i < 4; i++) {
+
+			int colorHistory = resultHistory[round][i];
+
+			if (colorHistory != color) {
+				if (!possibilities[colorHistory][i].empty()) {
+					if (possibilities[colorHistory][i].back() != -1 && possibilities[colorHistory][i].back() != 100) {
+						tab[counter][0] = colorHistory;
+						tab[counter][1] = i;
+						counter++;
+					}
+				}
+			}
+		}
+
+		if (counter == quantity) {
+			for (int j = 0; j < quantity; j++) {
+				updateList(tab[j][0], tab[j][1], 100);
+			}
+		}
+
+	}
+}
 
 void generateNumbers(int n, int len, vector<int>& curr, vector<vector<int>>& result) {
 	if (n == len) {
@@ -509,13 +457,15 @@ int main()
 
 
 
-	for (int i = 0; i < 800; i++) {
-		for (int j = 0; j < 4; j++) {
-			cout << result[i][j];
-			Rcode[j] = result[i][j] + 48;
-		}
-		cout << endl;
-		licznik = 0;
+	//for (int i = 0; i < 800; i++) {
+	//	for (int j = 0; j < 4; j++) {
+	//		cout << result[i][j];
+	//		Rcode[j] = result[i][j] + 48;
+	//	}
+	//	cout << endl;
+	//	licznik = 0;
+
+		Rcode = "1253";
 
 		for (int l = 0; l < 14; l++) {
 			for (int j = 0; j < 6; j++) {
@@ -540,7 +490,7 @@ int main()
 			}
 			cout << endl;
 		}
-	}
+	//}
 
 	return 0;
 }
